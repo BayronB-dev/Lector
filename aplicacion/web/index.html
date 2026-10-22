@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title>Lector de documentos</title>
+<style>
+  :root {
+    --fondo: #ffffff; --texto: #111111; --suave: #444444; --linea: #111111;
+    --panel: #f1f1f1; --boton: #111111; --boton-texto: #ffffff;
+    --escala: 1;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --fondo: #101010; --texto: #f2f2f2; --suave: #bdbdbd; --linea: #f2f2f2;
+            --panel: #1f1f1f; --boton: #f2f2f2; --boton-texto: #101010; }
+  }
+  * { box-sizing: border-box; }
+  html { font-size: calc(100% * var(--escala)); -webkit-text-size-adjust: 100%; }
+  body { margin: 0; height: 100vh; height: 100dvh; display: flex; flex-direction: column;
+         background: var(--fondo); color: var(--texto);
+         font-family: Arial, Helvetica, sans-serif; font-size: 1.15rem; line-height: 1.45; }
+  button, label.boton { font: inherit; cursor: pointer; }
+
+  /* Barra superior */
+  .barra { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+           padding: 10px 16px; padding-top: max(10px, env(safe-area-inset-top));
+           border-bottom: 2px solid var(--linea); }
+  .barra h1 { font-size: 1.25rem; margin: 0; }
+  .tam { display: flex; gap: 8px; }
+  .tam button { min-width: 48px; min-height: 48px; border: 2px solid var(--linea); border-radius: 10px;
+                background: transparent; color: var(--texto); font-weight: bold; }
+
+  /* Zona central con desplazamiento */
+  main { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px;
+         display: flex; flex-direction: column; gap: 14px; }
+  .estado { margin: 0; font-weight: bold; display: flex; align-items: center; gap: 10px; min-height: 1.6em; }
+  .vueltas { width: 1.2em; height: 1.2em; border: 3px solid var(--linea); border-top-color: transparent;
+             border-radius: 50%; animation: girar 0.9s linear infinite; flex: none; }
+  .vueltas[hidden] { display: none; }
+  @keyframes girar { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .vueltas { animation: none; border-top-color: var(--linea); } }
+
+  .guia { background: var(--panel); border-radius: 12px; padding: 14px 16px; }
+  .guia h2 { font-size: 1.05rem; margin: 0 0 6px; }
+  .guia ol { margin: 0; padding-left: 1.3em; }
+  .guia li { margin: 4px 0; }
+  .guia .privacidad { margin: 10px 0 0; font-size: 0.95rem; color: var(--suave); }
+
+  #resultado[hidden] { display: none; }
+  #resultado { display: flex; flex-direction: column; gap: 12px; }
+  #aviso { margin: 0; border: 3px solid var(--linea); border-radius: 12px; padding: 12px 14px; font-weight: bold; }
+  #aviso:empty { display: none; }
+
+  .fila { display: flex; flex-wrap: wrap; gap: 8px; }
+  .fila > button { flex: 1 1 30%; min-height: 56px; padding: 8px 10px; border: 2px solid var(--linea); border-radius: 12px;
+                   background: transparent; color: var(--texto); font-weight: bold; }
+  .fila > button.relleno { background: var(--boton); color: var(--boton-texto); flex-basis: 100%; }
+
+  h2.titulo { font-size: 1rem; margin: 4px 0 0; color: var(--suave); text-transform: uppercase; letter-spacing: 0.04em; }
+  #texto { white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; font-size: 1.1rem; margin: 0;
+           background: var(--panel); border-radius: 12px; padding: 14px; }
+  #texto:empty::before { content: "No se muestra texto porque la lectura no es confiable."; color: var(--suave); }
+  .detalle { margin: 0; font-size: 0.95rem; color: var(--suave); }
+  details { border: 2px solid var(--linea); border-radius: 12px; padding: 0 14px; }
+  summary { min-height: 52px; display: flex; align-items: center; font-weight: bold; cursor: pointer; }
+  details img { width: 100%; height: auto; border-radius: 8px; margin: 0 0 14px; }
+
+  /* Barra inferior: al alcance del pulgar */
+  .acciones { display: flex; flex-direction: column; gap: 8px; padding: 10px 16px;
+              padding-bottom: max(10px, env(safe-area-inset-bottom)); border-top: 2px solid var(--linea);
+              background: var(--fondo); }
+  input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+  label.boton { display: flex; align-items: center; justify-content: center; text-align: center;
+                border: 3px solid var(--linea); border-radius: 16px; font-weight: bold; user-select: none; }
+  label.principal { min-height: 76px; font-size: 1.5rem; background: var(--boton); color: var(--boton-texto); }
+  label.secundario { min-height: 50px; font-size: 1.05rem; background: transparent; color: var(--texto); }
+  input[type=file]:focus-visible + label, button:focus-visible, summary:focus-visible, label.boton:focus-visible {
+    outline: 4px solid var(--texto); outline-offset: 3px; }
+  .ocupado label.boton { opacity: 0.45; pointer-events: none; }
+
+  /* Pantallas bajas (celular de lado): botones lado a lado */
+  @media (max-height: 480px) and (orientation: landscape) {
+    .acciones { flex-direction: row; }
+    .acciones label { flex: 1; min-height: 64px; }
+    label.principal { font-size: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="barra">
+  <h1>Lector de documentos</h1>
+  <div class="tam" role="group" aria-label="Tamaño de la letra">
+    <button type="button" id="b-menos" aria-label="Letra más pequeña">A−</button>
+    <button type="button" id="b-mas" aria-label="Letra más grande">A+</button>
+  </div>
+</header>
+
+<main id="contenido">
+  <p id="estado" class="estado" role="status" aria-live="polite">
+    <span class="vueltas" id="vueltas" hidden></span><span id="estado-texto">Listo. Toca «Fotografiar documento».</span>
+  </p>
+
+  <section class="guia" id="guia" aria-label="Consejos">
+    <h2>Para una buena lectura</h2>
+    <ol>
+      <li>Usa buena luz y evita sombras sobre la hoja.</li>
+      <li>Pon el documento recto y completo dentro de la foto.</li>
+      <li>Mantén el celular quieto al disparar.</li>
+    </ol>
+    <p class="privacidad">La foto <span id="cifrada">viaja cifrada al servidor, </span>se lee y se descarta: no se guarda ni se registra quién la envía.
+      Es un prototipo de estudiantes y puede leer mal; confirma con otra persona los datos importantes, como dinero o medicinas.</p>
+  </section>
+
+  <section id="resultado" hidden aria-label="Resultado de la lectura">
+    <p id="aviso"></p>
+    <p class="detalle" id="datos"></p>
+    <div class="fila" role="group" aria-label="Controles de audio">
+      <button type="button" id="b-repetir" class="relleno">Escuchar otra vez</button>
+      <button type="button" id="b-pausa">Pausar</button>
+      <button type="button" id="b-velocidad" aria-label="Velocidad de lectura: normal">Velocidad 1×</button>
+    </div>
+    <div class="fila">
+      <button type="button" id="b-avisos"></button>
+    </div>
+    <h2 class="titulo">Texto leído</h2>
+    <pre id="texto"></pre>
+    <div class="fila">
+      <button type="button" id="b-copiar">Copiar texto</button>
+    </div>
+    <details id="foto-detalle">
+      <summary>Ver la foto tomada</summary>
+      <img id="vista" alt="Foto tomada, solo para revisarla">
+    </details>
+  </section>
+</main>
+
+<nav class="acciones" id="acciones" aria-label="Tomar o elegir una foto">
+  <input type="file" id="foto" accept="image/*" capture="environment">
+  <label for="foto" class="boton principal" id="l-foto" role="button" tabindex="0">Fotografiar documento</label>
+  <input type="file" id="galeria" accept="image/*">
+  <label for="galeria" class="boton secundario" id="l-galeria" role="button" tabindex="0">Elegir una foto de la galería</label>
+</nav>
+
+<audio id="audio" preload="auto"></audio>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const entradaFoto = $("foto"), entradaGaleria = $("galeria");
+  const estado = $("estado-texto"), vueltas = $("vueltas");
+  const guia = $("guia"), resultado = $("resultado"), aviso = $("aviso"), texto = $("texto"), datos = $("datos");
+  const audio = $("audio"), vista = $("vista"), detalleFoto = $("foto-detalle");
+  const bRepetir = $("b-repetir"), bPausa = $("b-pausa"), bVelocidad = $("b-velocidad"), bCopiar = $("b-copiar");
+  const contenido = $("contenido");
+  const bAvisos = $("b-avisos");
+
+  // Solo se dice que la foto viaja cifrada si de verdad es así (en internet, con https; en la red local no).
+  if (location.protocol !== "https:") $("cifrada").textContent = "";
+
+  // Preferencias del usuario en este celular (si el navegador no deja guardar, simplemente no se recuerdan).
+  function leerPref(clave, porDefecto) { try { return localStorage.getItem(clave) ?? porDefecto; } catch (e) { return porDefecto; } }
+  function guardarPref(clave, valor) { try { localStorage.setItem(clave, valor); } catch (e) {} }
+
+  // --- Tamaño de letra ---
+  const ESCALAS = [0.9, 1, 1.15, 1.3, 1.5];
+  let indiceEscala = Math.min(Math.max(parseInt(leerPref("escala", "1"), 10) || 1, 0), ESCALAS.length - 1);
+  function aplicarEscala() {
+    document.documentElement.style.setProperty("--escala", ESCALAS[indiceEscala]);
+    guardarPref("escala", indiceEscala);
+  }
+  $("b-menos").addEventListener("click", () => { indiceEscala = Math.max(0, indiceEscala - 1); aplicarEscala(); });
+  $("b-mas").addEventListener("click", () => { indiceEscala = Math.min(ESCALAS.length - 1, indiceEscala + 1); aplicarEscala(); });
+  aplicarEscala();
+
+  // --- Botones que son etiquetas: también deben funcionar con teclado ---
+  for (const [etiqueta, entrada] of [[$("l-foto"), entradaFoto], [$("l-galeria"), entradaGaleria]]) {
+    etiqueta.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); entrada.click(); }
+    });
+  }
+
+  function decir(mensaje, trabajando = false) {
+    estado.textContent = mensaje;
+    vueltas.hidden = !trabajando;
+  }
+  function bloquear(si) {
+    document.body.classList.toggle("ocupado", si);
+    entradaFoto.disabled = entradaGaleria.disabled = si;
+  }
+
+  // --- Avisos en voz: breves (por defecto), completos o ninguno ---
+  // El aviso siempre se muestra en pantalla; esto solo cambia lo que dice la voz.
+  const MODOS_AVISO = [["breves", "Avisos en voz: breves"], ["completos", "Avisos en voz: completos"], ["ninguno", "Avisos en voz: apagados"]];
+  let indiceAviso = Math.max(0, MODOS_AVISO.findIndex((m) => m[0] === leerPref("avisos", "breves")));
+  function mostrarModoAviso() { bAvisos.textContent = MODOS_AVISO[indiceAviso][1]; }
+  bAvisos.addEventListener("click", () => {
+    indiceAviso = (indiceAviso + 1) % MODOS_AVISO.length;
+    guardarPref("avisos", MODOS_AVISO[indiceAviso][0]);
+    mostrarModoAviso();
+    decir(MODOS_AVISO[indiceAviso][1] + ". Se aplica a la próxima foto.");
+  });
+  mostrarModoAviso();
+
+  // --- Audio ---
+  const VELOCIDADES = [[1, "Velocidad 1×", "normal"], [0.8, "Velocidad 0,8×", "lenta"], [1.25, "Velocidad 1,25×", "rápida"]];
+  let indiceVelocidad = 0;
+  function aplicarVelocidad() {
+    audio.playbackRate = VELOCIDADES[indiceVelocidad][0];
+    bVelocidad.textContent = VELOCIDADES[indiceVelocidad][1];
+    bVelocidad.setAttribute("aria-label", "Velocidad de lectura: " + VELOCIDADES[indiceVelocidad][2]);
+  }
+  bVelocidad.addEventListener("click", () => { indiceVelocidad = (indiceVelocidad + 1) % VELOCIDADES.length; aplicarVelocidad(); });
+
+  async function reproducir() {
+    try { audio.currentTime = 0; aplicarVelocidad(); await audio.play(); }
+    catch (e) { decir("Toca «Escuchar otra vez» para oír la lectura."); bRepetir.focus(); }
+  }
+  bRepetir.addEventListener("click", reproducir);
+  bPausa.addEventListener("click", () => { if (audio.paused) audio.play(); else audio.pause(); });
+  audio.addEventListener("play", () => { bPausa.textContent = "Pausar"; });
+  audio.addEventListener("pause", () => { bPausa.textContent = audio.ended ? "Pausar" : "Seguir"; });
+  audio.addEventListener("ended", () => { bPausa.textContent = "Pausar"; });
+
+  bCopiar.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(texto.textContent); decir("Texto copiado."); }
+    catch (e) {
+      const rango = document.createRange(); rango.selectNodeContents(texto);
+      const sel = getSelection(); sel.removeAllRanges(); sel.addRange(rango);
+      decir("Texto seleccionado: usa «Copiar» del menú del celular.");
+    }
+  });
+
+  // --- Enviar la foto al servidor ---
+  // Una foto de celular pesa varios MB y el servidor igual la reduce a 2000 px de lado.
+  // Reducirla aquí antes de enviarla la hace subir mucho más rápido con datos móviles.
+  async function reducir(archivo) {
+    try {
+      const imagen = await createImageBitmap(archivo, { imageOrientation: "from-image" });
+      const escala = Math.min(1, 2000 / Math.max(imagen.width, imagen.height));
+      const lienzo = document.createElement("canvas");
+      lienzo.width = Math.round(imagen.width * escala);
+      lienzo.height = Math.round(imagen.height * escala);
+      lienzo.getContext("2d").drawImage(imagen, 0, 0, lienzo.width, lienzo.height);
+      imagen.close();
+      const reducida = await new Promise((listo) => lienzo.toBlob(listo, "image/jpeg", 0.9));
+      return reducida && reducida.size < archivo.size ? reducida : archivo;
+    } catch (e) {
+      return archivo;   // si el navegador no puede abrirla (por ejemplo, HEIC), se envía la original
+    }
+  }
+
+  async function procesar(archivo) {
+    if (!archivo) return;
+    audio.pause();
+    resultado.hidden = true;
+    guia.hidden = true;
+    bloquear(true);
+    decir("Procesando la foto. Puede tardar unos segundos.", true);
+
+    if (vista.dataset.url) URL.revokeObjectURL(vista.dataset.url);   // la foto solo vive en la memoria del navegador
+    vista.dataset.url = URL.createObjectURL(archivo);
+    vista.src = vista.dataset.url;
+    detalleFoto.open = false;
+
+    const inicio = performance.now();
+    const form = new FormData();
+    form.append("foto", await reducir(archivo), "foto.jpg");
+    form.append("avisos", MODOS_AVISO[indiceAviso][0]);
+    try {
+      const respuesta = await fetch("/leer", { method: "POST", body: form });
+      let json;
+      try { json = await respuesta.json(); } catch (e) { throw new Error("El servidor no respondió bien."); }
+      if (!respuesta.ok) throw new Error(json.error || "No se pudo leer la foto.");
+
+      const segundos = Math.round((performance.now() - inicio) / 1000);
+      aviso.textContent = json.aviso || "";
+      texto.textContent = json.leido ? json.texto : "";
+      const resumen = { alta: "Lectura sin avisos", media: "Lectura con aviso", baja: "Texto no leído" }[json.nivel] || "";
+      datos.textContent = `${resumen} · confianza del reconocimiento ${Math.round(json.confianza * 100)} % · ${segundos} s`;
+      resultado.hidden = false;
+      contenido.scrollTop = 0;
+      decir(json.aviso ? "Atención: hay un aviso." : "Lectura lista.");
+      if (navigator.vibrate) navigator.vibrate(json.aviso ? [120, 80, 120] : 80);
+
+      bRepetir.disabled = bPausa.disabled = bVelocidad.disabled = !json.audio;
+      if (json.audio) {
+        audio.src = "data:audio/wav;base64," + json.audio;
+        await reproducir();
+      }
+    } catch (error) {
+      guia.hidden = false;
+      decir("Ocurrió un problema: " + error.message + " Intenta de nuevo.");
+    } finally {
+      bloquear(false);
+      entradaFoto.value = entradaGaleria.value = "";   // permite volver a elegir la misma foto
+    }
+  }
+  entradaFoto.addEventListener("change", () => procesar(entradaFoto.files[0]));
+  entradaGaleria.addEventListener("change", () => procesar(entradaGaleria.files[0]));
+</script>
+</body>
+</html>

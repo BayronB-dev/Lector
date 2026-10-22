@@ -1,0 +1,1 @@
+Receta médica (ejemplo) Paciente: Ana María Rojas Medicamento: Ibuprofeno 400 mg Indicación: tomar una tableta cada 8 horas durante 5 días, después de las comidas. Fecha: 05/10/2026 Si el dolor continúa, consulte a su médico.

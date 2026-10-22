@@ -1,0 +1,4 @@
+documento,n,cer_prom,wer_prom,wer_voz_prom,confianza_prom,con_aviso,no_leidas
+libro_traduccion,1,0.0035,0.0218,0.0218,0.9956,0,0
+libro_gato_negro,1,0.005,0.0252,0.0252,0.9957,0,0
+libro_odisea,1,0.0612,0.0707,0.0707,0.9934,1,0

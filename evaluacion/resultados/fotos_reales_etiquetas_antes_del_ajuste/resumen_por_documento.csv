@@ -1,0 +1,6 @@
+documento,n,cer_prom,wer_prom,wer_voz_prom,confianza_prom,con_aviso,no_leidas
+crema_uso_externo,1,0.0017,0.0128,0.0123,0.9925,1,0
+etiqueta_margarina,1,0.0154,0.0897,0.0253,0.9812,0,0
+etiqueta_miel,1,0.0386,0.0227,0.0227,0.9933,0,0
+medicamento_spray_nasal,1,0.065,0.375,0.3488,0.9946,1,0
+caja_torta,1,0.3898,0.4048,0.3968,0.9926,1,0

@@ -1,0 +1,6 @@
+# La voz se descarga con: python -m piper.download_voices es_MX-claude-high --download-dir voces
+aplicacion/voces/*.onnx
+aplicacion/voces/*.onnx.json
+__pycache__/
+*.pyc
+.venv/

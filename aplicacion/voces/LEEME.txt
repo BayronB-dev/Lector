@@ -1,0 +1,2 @@
+Aqui se guarda la voz. Descargarla con:
+python -m piper.download_voices es_MX-claude-high --download-dir voces

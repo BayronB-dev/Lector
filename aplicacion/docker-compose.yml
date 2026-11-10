@@ -1,0 +1,29 @@
+# Despliegue del lector en el VPS. El HTTPS lo pone Caddy (otro contenedor del mismo servidor), que
+# recibe las visitas a https://lector.bami.lol y se las pasa a este contenedor por la red "proxy".
+# Este contenedor no abre ningún puerto hacia internet.
+#
+#   docker compose up -d --build
+
+services:
+  lector:
+    build: .
+    restart: always
+    environment:
+      LECTOR_DETRAS_DE_PROXY: "1"   # confiar en la IP que informa Caddy (para el límite de fotos por minuto)
+      OMP_NUM_THREADS: "4"          # igual al límite de procesador de abajo
+    # [ÉTICA: privacidad] Disco de solo lectura: el programa no puede guardar fotos aunque quisiera.
+    # Lo temporal (el audio mientras se genera) vive en /tmp, que está en memoria RAM.
+    read_only: true
+    tmpfs:
+      - /tmp
+    # El servidor se comparte con otros servicios: el lector no puede usar más de esto.
+    cpus: 4
+    mem_limit: 6g
+    networks:
+      proxy:
+        aliases:
+          - lector-web
+
+networks:
+  proxy:
+    external: true

@@ -1,0 +1,6 @@
+archivo,documento,condicion,referencia
+imagenes/caja_torta.jpg,caja_torta,foto_celular_etiqueta,referencias/caja_torta.txt
+imagenes/etiqueta_margarina.jpg,etiqueta_margarina,foto_celular_etiqueta,referencias/etiqueta_margarina.txt
+imagenes/crema_uso_externo.jpg,crema_uso_externo,foto_celular_etiqueta,referencias/crema_uso_externo.txt
+imagenes/medicamento_spray_nasal.jpg,medicamento_spray_nasal,foto_celular_etiqueta,referencias/medicamento_spray_nasal.txt
+imagenes/etiqueta_miel.jpg,etiqueta_miel,foto_celular_etiqueta,referencias/etiqueta_miel.txt

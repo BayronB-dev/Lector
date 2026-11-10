@@ -1,0 +1,4 @@
+archivo,documento,condicion,referencia
+imagenes/libro_odisea.jpg,libro_odisea,foto_celular_papel,referencias/libro_odisea.txt
+imagenes/libro_gato_negro.jpg,libro_gato_negro,foto_celular_papel,referencias/libro_gato_negro.txt
+imagenes/libro_traduccion.jpg,libro_traduccion,foto_celular_papel,referencias/libro_traduccion.txt
